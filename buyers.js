@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const Buyer = require('./models').Buyer;
 const path = require('./util/path');
+const error = require('./util/error');
 const logger = require('./logs');
 const _ = require('lodash');
 
@@ -22,11 +23,14 @@ module.exports = function() {
 
   api.post('/', function(req, res) {
     const query = _.pick(req.body, 'name', 'callbackUrl');
+    logger.debug('Creating buyer', query);
     Buyer.create(
       query
     ).then(function(buyer) {
       logger.info('Created buyer', buyer.dataValues);
       res.location(path(req, buyer.id)).sendStatus(201);
+    }).catch(function(err) {
+      error(err, res);
     });
   });
 

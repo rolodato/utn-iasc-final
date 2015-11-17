@@ -8,6 +8,7 @@ module.exports = function(sequelize, Types) {
     },
     callbackUrl: {
       type: Types.STRING,
+      unique: true,
       validate: {
         isUrl: true
       }
