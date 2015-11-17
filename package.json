@@ -1,0 +1,31 @@
+{
+  "name": "utn-iasc-final",
+  "version": "1.0.0",
+  "description": "TP final Arquitecturas Concurrentes",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rolodato/utn-iasc-final.git"
+  },
+  "author": "Rodrigo López Dato <rlopezdato@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rolodato/utn-iasc-final/issues"
+  },
+  "homepage": "https://github.com/rolodato/utn-iasc-final#readme",
+  "dependencies": {
+    "body-parser": "^1.14.1",
+    "dotenv": "^1.2.0",
+    "express": "^4.13.3",
+    "lodash": "^3.10.1",
+    "minimist": "^1.2.0",
+    "pg": "^4.4.3",
+    "pg-hstore": "^2.3.2",
+    "pg-native": "^1.9.0",
+    "sequelize": "^3.13.0",
+    "winston": "^2.1.0"
+  }
+}
