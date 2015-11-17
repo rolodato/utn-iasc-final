@@ -25,7 +25,7 @@ module.exports = function() {
     Buyer.create(
       query
     ).then(function(buyer) {
-      logger.log('info', 'Created buyer', buyer.dataValues);
+      logger.info('Created buyer', buyer.dataValues);
       res.location(path(req, buyer.id)).sendStatus(201);
     });
   });
