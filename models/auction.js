@@ -20,7 +20,7 @@ module.exports = function(sequelize, Types) {
       validate: {
         notEmpty: true,
         isFuture: function(value) {
-          console.log(value);
+          // TODO
         }
       }
     }

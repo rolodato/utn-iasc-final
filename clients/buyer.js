@@ -16,6 +16,7 @@ app.use(bodyParser.json());
 
 app.post('/auctions', function(req, res) {
   logger.info('New auction notification', req.body);
+  res.sendStatus(200);
 });
 
 module.exports = function Buyer(options) {
