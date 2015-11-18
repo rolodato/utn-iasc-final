@@ -1,3 +1,7 @@
+const request = require('request-promise');
+const logger = require('../logs');
+const url = require('url');
+
 module.exports = function(sequelize, Types) {
   return sequelize.define('Buyer', {
     name: {
@@ -16,6 +20,16 @@ module.exports = function(sequelize, Types) {
       }
     }
   }, {
+    instanceMethods: {
+      notifyNew: function(auction) {
+        request.post({
+          json: auction.dataValues,
+          url: this.callbackUrl + 'auctions/'
+        }).catch(function(err) {
+          logger.warn('Failed to notify buyer', err.message);
+        });
+      }
+    },
     updatedAt: false
   });
 };

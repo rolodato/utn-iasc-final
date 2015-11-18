@@ -1,10 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const Auction = require('./models').Auction;
+const Buyer = require('./models').Buyer;
 const path = require('./util/path');
 const error = require('./util/error');
 const logger = require('./logs');
 const _ = require('lodash');
+const Promise = require('bluebird');
 
 module.exports = function() {
   const api = express.Router({
@@ -24,12 +26,15 @@ module.exports = function() {
   api.post('/', function(req, res) {
     const query = _.pick(req.body, 'title', 'basePrice', 'expirationDate');
     logger.debug('Creating auction', query);
-    Auction.create(
-      query
-    ).then(function(auction) {
+    Promise.join(Auction.create(query), Buyer.all(), function(auction, buyers) {
       logger.info('Created auction', auction.dataValues);
+      logger.info(`Notifying ${buyers.length} buyers of new auction`);
+      buyers.forEach(function(buyer) {
+        buyer.notifyNew(auction);
+      });
       res.location(path(req, auction.id)).sendStatus(201);
     }).catch(function(err) {
+      logger.error(err);
       error(err, res);
     });
   });
