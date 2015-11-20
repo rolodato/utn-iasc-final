@@ -1,3 +1,5 @@
+const moment = require('moment');
+
 module.exports = function(sequelize, Types) {
   return sequelize.define('Auction', {
     title: {
@@ -20,7 +22,9 @@ module.exports = function(sequelize, Types) {
       validate: {
         notEmpty: true,
         isFuture: function(value) {
-          // TODO
+          if(!moment().isBefore(value)){
+            throw new Error('Date must be in the future!');
+          }
         }
       }
     }
