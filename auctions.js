@@ -50,7 +50,9 @@ module.exports = function() {
       if (!auction) {
         return Promise.reject({status: 404, message: 'auction does not exist'});
       } else if (auction.isFinished()) {
-        return Promise.reject({status: 400, message: 'auction has finished, bids not allowed'});
+        return Promise.reject({status: 400, message: 'auction has finished'});
+      } else {
+        return auction;
       }
     }
 
