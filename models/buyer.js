@@ -28,6 +28,14 @@ module.exports = function(sequelize, Types) {
         }).catch(function(err) {
           logger.warn('Failed to notify buyer', err.message);
         });
+      },
+      notifyBid: function(bid) {
+        request.post({
+          json: bid,
+          url: this.callbackUrl + 'bids/'
+        }).catch(function(err) {
+          logger.warn('Failed to notify buyers of new bid', err.message);
+        });
       }
     },
     updatedAt: false

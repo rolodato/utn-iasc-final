@@ -28,5 +28,11 @@ module.exports = function(sequelize, Types) {
         }
       }
     }
+  }, {
+    instanceMethods: {
+      isFinished: function() {
+        return moment().isAfter(this.expirationDate);
+      }
+    }
   });
 };
