@@ -1,6 +1,7 @@
 const request = require('request-promise');
 const logger = require('../logs');
 const url = require('url');
+const Promise = require('bluebird');
 
 module.exports = function(sequelize, Types) {
   const Bid = sequelize.define('Bid', {
@@ -25,8 +26,22 @@ module.exports = function(sequelize, Types) {
         key: 'id'
       }
     }
+  }, {
+    validate: {
+      highestBidder: function() {
+        const self = this;
+        return Bid.max('amount', {
+          where: {
+            auctionId: this.auctionId
+          }
+        }).then(function(topBid) {
+          if (self.amount < topBid) {
+             return Promise.reject('bid must be higher than the highest bidder');
+          }
+        });
+      }
+    }
   });
 
   return Bid;
 };
-

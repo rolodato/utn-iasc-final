@@ -51,16 +51,6 @@ module.exports = function() {
       } else if (auction.isFinished()) {
         res.status(400).send('auction has finished, bids not allowed');
       } else {
-        return Bid.max('amount', {
-          where: {
-            auctionId: auctionId
-          }
-        });
-      }
-    }).then(function(topBid) {
-      if (query.amount < topBid) {
-        res.status(400).send(`bid is lower than the highest bidder ($${topBid})`);
-      } else {
         return Bid.create(query);
       }
     }).then(function(bid) {
