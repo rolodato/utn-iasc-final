@@ -28,11 +28,22 @@ module.exports = function(sequelize, Types) {
           }
         }
       }
+    },
+    isCanceled: {
+      type: Types.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
     }
   }, {
     instanceMethods: {
-      isFinished: function() {
+      isExpired: function() {
         return moment().isAfter(this.expirationDate);
+      },
+      isFinished: function() {
+        return this.isExpired() || this.isCanceled;
+      },
+      cancel: function() {
+        return this.update({ canceled: true });
       }
     }
   });

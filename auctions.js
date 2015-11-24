@@ -80,5 +80,21 @@ module.exports = function() {
       });
   });
 
+  api.post('/:auctionId/cancel', function(req, res) {
+    function notifyBuyers(auction, buyers) {
+      buyers.forEach(function(buyer) {
+        buyer.notify({auctionCanceled: auction.auctionId});
+      });
+    }
+    const auctionId = req.params.auctionId;
+    Auction.findById(auctionId)
+      .then(validateAuction)
+      .then(cancelAuction)
+      .then(notifyBuyers)
+      .catch(function(err) {
+        error(err, res);
+      });
+  });
+
   return api;
 };
