@@ -31,7 +31,7 @@ module.exports = function() {
       logger.info('Created auction', auction.dataValues);
       logger.info(`Notifying ${buyers.length} buyers of new auction`);
       buyers.forEach(function(buyer) {
-        buyer.notifyNew(auction);
+        buyer.notify({newAuction: auction});
       });
       res.location(path(req, auction.id)).sendStatus(201);
     }).catch(function(err) {
@@ -63,7 +63,7 @@ module.exports = function() {
     function notifyBuyers(bid, buyers) {
       logger.info(`New bid: $${bid.amount} on auction ${bid.auctionId} from buyer ${bid.buyerId}`);
       buyers.forEach(function(buyer) {
-        buyer.notifyBid({
+        buyer.notify({
           amount: bid.amount,
           auctionId: bid.auctionId
         });

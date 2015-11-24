@@ -23,13 +23,8 @@ function fullUrl(req) {
 app.disable('x-powered-by');
 app.use(bodyParser.json());
 
-app.post('/auctions', function(req, res) {
-  logger.info('New auction notification', req.body);
-  res.sendStatus(200);
-});
-
-app.post('/bids', function(req, res) {
-  logger.info(`New bid notification received by ${fullUrl(req)}`, req.body);
+app.post('/notify', function(req, res) {
+  logger.info('New notification', req.body);
   res.sendStatus(200);
 });
 
