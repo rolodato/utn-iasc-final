@@ -19,6 +19,7 @@ module.exports = function(sequelize, Types) {
     },
     expirationDate: {
       type: Types.DATE,
+      allowNull: false,
       validate: {
         notEmpty: true,
         isFuture: function(value) {
