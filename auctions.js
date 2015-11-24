@@ -45,18 +45,21 @@ module.exports = function() {
     const query = _.extend(_.pick(req.body, 'amount', 'buyerId'), {
       auctionId: auctionId
     });
-    Promise.join(Auction.findById(auctionId), Buyer.findById(query.buyerId), function(auction, buyer) {
+
+    function validateAuction(auction) {
       if (!auction) {
-        res.status(404).send('auction does not exist');
+        return Promise.reject({status: 404, message: 'auction does not exist'});
       } else if (auction.isFinished()) {
-        res.status(400).send('auction has finished, bids not allowed');
-      } else {
-        return Bid.create(query);
+        return Promise.reject({status: 400, message: 'auction has finished, bids not allowed'});
       }
-    }).then(function(bid) {
+    }
+
+    function createBid() {
+      return [Bid.create(query), Buyer.findAll()];
+    }
+
+    function notifyBuyers(bid, buyers) {
       logger.info(`New bid: $${bid.amount} on auction ${bid.auctionId} from buyer ${bid.buyerId}`);
-      return [bid, Buyer.findAll()];
-    }).spread(function(bid, buyers) {
       buyers.forEach(function(buyer) {
         buyer.notifyBid({
           amount: bid.amount,
@@ -64,10 +67,15 @@ module.exports = function() {
         });
       });
       res.sendStatus(201);
-    }).catch(function(err) {
-      logger.error(err);
-      error(err, res);
-    });
+    }
+
+    Promise.all([Auction.findById(auctionId), Buyer.findById(query.buyerId)])
+      .spread(validateAuction)
+      .then(createBid)
+      .spread(notifyBuyers)
+      .catch(function(err) {
+        error(err, res);
+      });
   });
 
   return api;

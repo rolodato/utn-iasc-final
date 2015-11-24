@@ -19,13 +19,14 @@ module.exports = function(err, res) {
     },
     other: function(err) {
       return {
-        errors: [err],
-        status: 500
+        errors: [err.message || err],
+        status: err.status || 500
       };
     }
   };
   const responseType = responses[err.name] || responses.other;
   const response = responseType(err);
+  logger.warn(response);
   res.status(response.status).json({
     errors: response.errors
   });
