@@ -6,21 +6,32 @@ Instalación
   * Ubuntu/Debian: `sudo apt-get install libpq-dev`
   * OS X: `brew install postgres`
   * Windows: [Bajar PostgreSQL](http://www.postgresql.org/download/windows/) y agregar `bin` dentro del directorio de instalación al `PATH`
-3. `npm install`
-4. `vagrant up`
-5. Elegir la interfaz de red para hacer bridging
+3. Editar `.env`, agregar IP local en la variable `LOCAL_IP` (ej. `LOCAL_IP=192.168.1.102`)
+4. `npm install`
+5. `vagrant up`
+6. Elegir la misma interfaz de red asignada a `LOCAL_IP` como interfaz de bridging
+
+Si todo levantó correctamente, el primario empieza a enviar heartbeats al secundario.
+
+Se pueden ver los logs en los archivos `primary.log` y `secondary.log` (ej. `tail -f secondary.log`)
 
 Uso
 ===
 
-Para levantar el servidor de aplicación, ejecutar:
+Levantar el servidor de aplicación:
 
 ```sh
 node index.js
 ```
 
-Para levantar de cero, borrando la base de datos:
+Levantar de cero, borrando la base de datos:
 
 ```sh
 node index.js -f
+```
+
+Levantar el servidor secundario (escucha heartbeats del primario):
+
+```sh
+node secondary.js
 ```

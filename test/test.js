@@ -5,15 +5,17 @@ const Buyer = Promise.promisifyAll(require('../clients/buyer'));
 const request = require('request-promise');
 const logger = require('../logs');
 const url = require('url');
+require('dotenv').load();
+const ip = process.env.LOCAL_IP;
 
 const buyer1 = new Buyer({
   name: 'alice',
-  callbackUrl: 'http://localhost:3001/'
+  callbackUrl: `http://${ip}:4001/`
 });
 buyer1.listen();
 const buyer2 = new Buyer({
   name: 'bob',
-  callbackUrl: 'http://localhost:3002/'
+  callbackUrl: `http://${ip}:4002/`
 });
 buyer2.listen();
 

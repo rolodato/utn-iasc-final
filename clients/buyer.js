@@ -9,7 +9,8 @@ const request = require('request-promise').defaults({
     'Content-Type': 'application/json'
   },
   resolveWithFullResponse: true,
-  json: true
+  json: true,
+  simple: false
 });
 
 function fullUrl(req) {
