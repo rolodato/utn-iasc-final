@@ -1,5 +1,4 @@
 const express = require('express');
-const app = express();
 const url = require('url');
 const logger = require('../logs');
 const bodyParser = require('body-parser');
@@ -9,8 +8,7 @@ const request = require('request-promise').defaults({
     'Content-Type': 'application/json'
   },
   resolveWithFullResponse: true,
-  json: true,
-  simple: false
+  json: true
 });
 
 function fullUrl(req) {
@@ -21,20 +19,27 @@ function fullUrl(req) {
   });
 }
 
-app.disable('x-powered-by');
-app.use(bodyParser.json());
-
-app.post('/notify', function(req, res) {
-  logger.info('New notification', req.body);
-  res.sendStatus(200);
-});
-
 module.exports = function Buyer(options) {
   const self = this;
+  const app = express();
+  app.use(bodyParser.json());
+
+  app.post('/notify', function(req, res) {
+    logger.info('New notification', req.body);
+    res.sendStatus(200);
+  });
+
+  app.post('/newServer', function(req, res) {
+    logger.warn(`Primary server is down, switching to ${req.body.url}`);
+    self.serverUrl = req.body.url;
+    res.sendStatus(200);
+  });
+
   this.name = options.name;
   this.callbackUrl = url.parse(options.callbackUrl);
   // ID is set after registering
   this.buyerId = null;
+  this.serverUrl = null;
   this.register = function(serverUrl) {
     return request.post({
       url: serverUrl + 'buyers/',
@@ -44,18 +49,19 @@ module.exports = function Buyer(options) {
       }
     }).then(function(res) {
       self.buyerId = res.headers.location.split('/').pop();
+      self.serverUrl = serverUrl;
       return self.buyerId;
     });
   };
-  this.bid = function(amount, auctionUrl) {
-    if (!this.buyerId) {
+  this.bid = function(amount, auctionId) {
+    if (!self.buyerId || !self.serverUrl) {
       return Promise.reject('user must register before bidding');
     }
     return request.post({
-      url: auctionUrl + '/bid',
+      url: `${self.serverUrl}auctions/${auctionId}/bid`,
       body: {
         amount: amount,
-        buyerId: this.buyerId
+        buyerId: self.buyerId
       }
     });
   };

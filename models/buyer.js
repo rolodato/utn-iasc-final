@@ -28,6 +28,14 @@ module.exports = function(sequelize, Types) {
         }).catch(function(err) {
           logger.warn('Failed to notify buyer', err.message);
         });
+      },
+      newServer: function(msg) {
+        request.post({
+          json: msg,
+          url: this.callbackUrl + 'newServer/'
+        }).catch(function(err) {
+          logger.warn('Failed to notify buyer of failover', err.message);
+        });
       }
     },
     updatedAt: false

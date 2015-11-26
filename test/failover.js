@@ -1,5 +1,4 @@
 const Promise = require('bluebird');
-const app = Promise.promisifyAll(require('../server'));
 const sequelize = require('../models').sequelize;
 const Buyer = Promise.promisifyAll(require('../clients/buyer'));
 const request = require('request-promise');
@@ -7,6 +6,8 @@ const logger = require('../logs');
 const url = require('url');
 require('dotenv').load();
 const ip = process.env.LOCAL_IP;
+
+var bidPrice = 10;
 
 const buyer1 = new Buyer({
   name: 'alice',
@@ -19,16 +20,13 @@ const buyer2 = new Buyer({
 });
 buyer2.listen();
 
-// TODO Refactor this
-// Adjudicacion simple, smoke test
 const serverUrl = 'http://localhost:3000/';
 sequelize.sync({
   force: true
 }).then(function() {
-  return app.listen(3000);
-}).then(function() {
-  return buyer1.register(serverUrl);
-}).then(function() {
+  return [buyer1.register(serverUrl), buyer2.register(serverUrl)];
+}).spread(function(res1, res2) {
+  logger.info(res1, res2);
   return request.post({
     json: {
       title: 'my auction',
@@ -39,15 +37,22 @@ sequelize.sync({
     resolveWithFullResponse: true
   });
 }).then(function(res) {
-  // register() sets ID in buyer object
-  const auctionId = res.headers.location.split('/').pop();
-  return [auctionId, buyer2.register(serverUrl)];
-}).spread(function(auctionId) {
-  return buyer2.bid(42, auctionId);
-}).then(function() {
-  logger.info('Test successful! Waiting for notifications to finish...');
+  return res.headers.location.split('/').pop();
+}).then(function(auctionId) {
+  function bid(buyer, auctionId) {
+    return function() {
+      buyer.bid(bidPrice, auctionId).then(function() {
+        bidPrice += 10;
+        logger.info(`buyer ${buyer.name} bid $${bidPrice}`);
+      }).catch(function(err) {
+        logger.warn(`${buyer.name} failed to bid on auction`);
+        logger.debug(err);
+      });
+    }
+  }
+  setInterval(bid(buyer1, auctionId), 2000);
   setTimeout(function() {
-    process.exit(0);
+    setInterval(bid(buyer2, auctionId), 2000);
   }, 1000);
 }).catch(function(err) {
   logger.error('Test failed!', err);

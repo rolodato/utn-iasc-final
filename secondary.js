@@ -1,14 +1,25 @@
 const logger = require('./logs');
 const express = require('express');
+const models = require('./models');
+const url = require('url');
+const sequelize = models.sequelize;
+const Buyer = models.Buyer;
 require('dotenv').load();
 
-const app = express();
+const app = require('./server');
 
 function startApp() {
   logger.warn(`no heartbeat from primary server received after ${hbTimeout}ms`);
   if (!isPrimaryDown) {
     logger.warn('starting application on secondary');
-    // TODO Start application and notify clients
+    sequelize.sync().then(function() {
+      logger.info('Successfully connected to database');
+      Buyer.all().then(function(buyers) {
+        buyers.forEach(function(buyer) {
+          buyer.newServer({url: process.env.SECONDARY_URL});
+        });
+      });
+    })
     isPrimaryDown = true;
   }
   planFailover();
