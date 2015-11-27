@@ -121,7 +121,10 @@ module.exports = function() {
       Promise.map(bids, function(bid) {
         return Buyer.findById(bid.buyerId);
       }).then(function(buyers) {
-        buyers.forEach(function(buyer) {
+        const uniqueBuyers = _.unique(buyers, false, function(b) {
+          return b.id;
+        });
+        uniqueBuyers.forEach(function(buyer) {
           buyer.notify({
             amount: self.bid.amount,
             auctionId: self.bid.auctionId,

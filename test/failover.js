@@ -21,12 +21,12 @@ const buyer2 = new Buyer({
 buyer2.listen();
 
 const serverUrl = 'http://localhost:3000/';
+const secondaryUrl = 'http://localhost:3001/';
 sequelize.sync({
   force: true
 }).then(function() {
   return [buyer1.register(serverUrl), buyer2.register(serverUrl)];
-}).spread(function(res1, res2) {
-  logger.info(res1, res2);
+}).then(function() {
   return request.post({
     json: {
       title: 'my auction',
@@ -54,6 +54,11 @@ sequelize.sync({
   setTimeout(function() {
     setInterval(bid(buyer2, auctionId), 2000);
   }, 1000);
+  setTimeout(function() {
+    request.post({
+      url: secondaryUrl + 'auctions/' + auctionId + '/cancel'
+    });
+  }, 10 * 1000);
 }).catch(function(err) {
   logger.error('Test failed!', err);
   process.exit(1);
