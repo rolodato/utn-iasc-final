@@ -7,6 +7,7 @@ const logger = require('../logs');
 const url = require('url');
 require('dotenv').load();
 const ip = process.env.LOCAL_IP;
+const moment = require('moment');
 
 const buyer1 = new Buyer({
   name: 'alice',
@@ -32,7 +33,7 @@ sequelize.sync({
   return request.post({
     json: {
       title: 'my auction',
-      expirationDate: '3000-01-01',
+      expirationDate: moment().add(10,'s'),
       basePrice: 15
     },
     url: serverUrl + 'auctions/',
@@ -48,7 +49,7 @@ sequelize.sync({
   logger.info('Test successful! Waiting for notifications to finish...');
   setTimeout(function() {
     process.exit(0);
-  }, 1000);
+  }, 2000000);
 }).catch(function(err) {
   logger.error('Test failed!', err);
   process.exit(1);
