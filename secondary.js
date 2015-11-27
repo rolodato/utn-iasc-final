@@ -18,6 +18,24 @@ function findWinner(auction) {
     });
 }
 
+function notifyWinners(auction, buyers) {
+  logger.info('Notifying winner of finished auction');
+  getWinnerBid(auction).bind({}).then(function(bid){
+    return Buyer.findById(bid.buyerId);
+  }).then(function(winner) {
+    this.winnerId = winner.id;
+    winner.notify({expiredAuction: 'You are the winner, congratulations!'});
+  }).then(function() {
+    return Buyer.findAll( {where: {id: {$ne: this.winnerId}}} )
+  }).then(function(losers) {
+    losers.forEach(function(buyer) {
+      buyer.notify({expiredAuction: 'You are the loser :( '});
+    });
+  }).then(function() {
+    return Auction.update({expirationNotified: true}, {where: {id: auction.id}});
+  });
+}
+
 function notifyWinner(auction) {
   return findWinner(auction)
     .then(function(winner) {
@@ -33,6 +51,10 @@ function notifyLosers(auction) {
     }).each(function(loser) {
       loser.notify({expiredAuction: 'You are the loser :('});
     })
+}
+
+function getBids(auction){
+  return Bid.findAll({where: {'auctionId': auction.id}});
 }
 
 function startApp() {
@@ -53,6 +75,17 @@ function startApp() {
           logger.info(`Notifying of ${auction.length} expired auctions`);
           return [notifyWinner(auction), notifyLosers(auction)];
         });
+
+      // auctions that have not expired yet
+      Auction.findAll().each(function(auction) {
+        var c = cron.scheduleJob(auction.expirationDate, function(){
+          logger.info('Expired auction:', auction.id);
+          getBids(auction).then(function(buyers){
+            return notifyWinners(auction, buyers);
+          });
+        });
+        logger.info('crons', app.crons);
+      });
     })
     isPrimaryDown = true;
   }
@@ -61,6 +94,7 @@ function startApp() {
 var startSecondary;
 var isPrimaryDown = false;
 const hbTimeout = 4000;
+var crons;
 
 function planFailover() {
   clearTimeout(startSecondary);
