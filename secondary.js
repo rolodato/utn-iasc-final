@@ -7,6 +7,7 @@ const Buyer = models.Buyer;
 const Auction = models.Auction;
 const Bid = models.Bid;
 const moment = require('moment');
+const request = require('request-promise');
 require('dotenv').load();
 
 const app = require('./server');
@@ -77,14 +78,10 @@ function startApp() {
         });
 
       // auctions that have not expired yet
-      Auction.findAll().each(function(auction) {
-        var c = cron.scheduleJob(auction.expirationDate, function(){
-          logger.info('Expired auction:', auction.id);
-          getBids(auction).then(function(buyers){
-            return notifyWinners(auction, buyers);
-          });
-        });
-        logger.info('crons', app.crons);
+      request.post({
+        url: process.env.SECONDARY_URL + 'auctions/crons'
+      }).catch(function(err) {
+        logger.error(err);
       });
     })
     isPrimaryDown = true;

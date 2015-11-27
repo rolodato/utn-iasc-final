@@ -48,7 +48,7 @@ module.exports = function(sequelize, Types) {
         return this.isExpired() || this.isCanceled;
       },
       cancel: function() {
-        return this.update({ canceled: true });
+        return this.update({ isCanceled: true });
       }
     }
   });

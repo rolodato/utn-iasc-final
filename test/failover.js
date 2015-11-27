@@ -46,7 +46,6 @@ sequelize.sync({
         logger.info(`buyer ${buyer.name} bid $${bidPrice}`);
       }).catch(function(err) {
         logger.warn(`${buyer.name} failed to bid on auction`);
-        logger.debug(err);
       });
     }
   }

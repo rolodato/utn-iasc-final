@@ -38,6 +38,20 @@ module.exports = function() {
     }
   });
 
+  api.post('/crons', function(req, res) {
+    Auction.findAll().each(function(auction) {
+      var c = cron.scheduleJob(auction.expirationDate, function(){
+        logger.info('Expired auction:', auction.id);
+        getBids(auction).then(function(buyers){
+          return notifyWinners(auction, buyers);
+        });
+      });
+      crons.push({cron: c, auctionId: auction.id});
+    }).then(function() {
+      res.sendStatus(200);
+    });
+  });
+
   api.post('/', function(req, res) {
     const query = _.pick(req.body, 'title', 'basePrice', 'expirationDate');
     logger.debug('Creating auction', query);
@@ -153,8 +167,6 @@ module.exports = function() {
   api.post('/:auctionId/cancel', function(req, res) {
     function notifyBuyers(bids) {
       const self = this;
-      logger.info(bids.length);
-      logger.info(`Cancel auction: ${this.auction.id}`);
       return Promise.map(bids, function(bid) {
         return Buyer.findById(bid.buyerId);
       }).then(function(bidders) {
