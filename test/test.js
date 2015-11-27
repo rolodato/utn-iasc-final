@@ -33,7 +33,7 @@ sequelize.sync({
   return request.post({
     json: {
       title: 'my auction',
-      expirationDate: moment().add(10,'s'),
+      expirationDate: moment().add(3,'s'),
       basePrice: 15
     },
     url: serverUrl + 'auctions/',
@@ -44,7 +44,7 @@ sequelize.sync({
   const auctionId = res.headers.location.split('/').pop();
   return [auctionId, buyer2.register(serverUrl)];
 }).spread(function(auctionId) {
-  return buyer2.bid(42, auctionId);
+  return [buyer1.bid(30, auctionId), buyer2.bid(42, auctionId)];
 }).then(function() {
   logger.info('Test successful! Waiting for notifications to finish...');
   setTimeout(function() {
