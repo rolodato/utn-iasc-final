@@ -33,6 +33,11 @@ module.exports = function(sequelize, Types) {
       type: Types.BOOLEAN,
       allowNull: false,
       defaultValue: false
+    },
+    expirationNotified: {
+      type: Types.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
     }
   }, {
     instanceMethods: {

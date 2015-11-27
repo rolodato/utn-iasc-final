@@ -67,6 +67,8 @@ module.exports = function() {
         losers.forEach(function(buyer) {
           buyer.notify({expiredAuction: 'You are the loser :( '});
         });
+      }).then(function() {
+        return Auction.update({expirationNotified: true}, {where: {id: auction.id}});
       });
     }
 

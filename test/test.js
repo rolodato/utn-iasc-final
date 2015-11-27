@@ -1,6 +1,5 @@
 const Promise = require('bluebird');
 const app = Promise.promisifyAll(require('../server'));
-const sequelize = require('../models').sequelize;
 const Buyer = Promise.promisifyAll(require('../clients/buyer'));
 const request = require('request-promise');
 const logger = require('../logs');
@@ -23,17 +22,12 @@ buyer2.listen();
 // TODO Refactor this
 // Adjudicacion simple, smoke test
 const serverUrl = 'http://localhost:3000/';
-sequelize.sync({
-  force: true
-}).then(function() {
-  return app.listen(3000);
-}).then(function() {
-  return buyer1.register(serverUrl);
-}).then(function() {
+buyer1.register(serverUrl)
+  .then(function() {
   return request.post({
     json: {
       title: 'my auction',
-      expirationDate: moment().add(3,'s'),
+      expirationDate: moment().add(10,'s'),
       basePrice: 15
     },
     url: serverUrl + 'auctions/',
