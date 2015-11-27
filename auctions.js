@@ -124,7 +124,8 @@ module.exports = function() {
         buyers.forEach(function(buyer) {
           buyer.notify({
             amount: self.bid.amount,
-            auctionId: self.bid.auctionId
+            auctionId: self.bid.auctionId,
+            bidderId: self.bid.buyerId
           });
         });
       })

@@ -25,7 +25,7 @@ module.exports = function Buyer(options) {
   app.use(bodyParser.json());
 
   app.post('/notify', function(req, res) {
-    logger.info('New notification', req.body);
+    logger.info(`New notification for buyer ${self.buyerId}`, req.body);
     res.sendStatus(200);
   });
 
