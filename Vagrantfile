@@ -17,7 +17,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     primary.vm.network "private_network", ip: "192.168.50.20"
     primary.vm.network "forwarded_port", guest: 3000, host: 3000
     primary.vm.provision "shell", path: "vagrant/provision_node.sh"
-    primary.vm.provision "shell", inline: "killall node; cd /vagrant && node index.js -f > primary.log 2>&1 &", privileged: false, run: "always"
+    primary.vm.provision "shell", inline: "killall node; cd /vagrant && node index.js > primary.log 2>&1 &", privileged: false, run: "always"
   end
 
   config.vm.define "secondary" do |secondary|
