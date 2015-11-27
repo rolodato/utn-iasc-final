@@ -9,7 +9,6 @@ Instalación
 3. Editar `.env`, agregar IP local en la variable `LOCAL_IP` (ej. `LOCAL_IP=192.168.1.102`)
 4. `npm install`
 5. `vagrant up`
-6. Elegir la misma interfaz de red asignada a `LOCAL_IP` como interfaz de bridging
 
 Si todo levantó correctamente, el primario empieza a enviar heartbeats al secundario.
 
