@@ -8,7 +8,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.define "db" do |db|
     db.vm.box = "ubuntu/trusty64"
     db.vm.network "private_network", ip: "192.168.50.10"
-    db.vm.network "forwarded_port", guest: 5432, host: 5432
+    db.vm.network "forwarded_port", guest: 5432, host: 5442
     db.vm.provision "shell", path: "vagrant/provision_db.sh"
   end
 

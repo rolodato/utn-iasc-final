@@ -8,6 +8,20 @@ const error = require('./util/error');
 const logger = require('./logs');
 const _ = require('lodash');
 const Promise = require('bluebird');
+const cron = require('node-schedule');
+
+var crons = [];
+
+function validateAuction(auction) {
+  this.auction = auction;
+  if (!auction) {
+    return Promise.reject({status: 404, message: 'auction does not exist'});
+  } else if (auction.isFinished()) {
+    return Promise.reject({status: 400, message: 'auction has finished'});
+  } else {
+    return auction;
+  }
+}
 
 module.exports = function() {
   const api = express.Router({
@@ -27,17 +41,68 @@ module.exports = function() {
   api.post('/', function(req, res) {
     const query = _.pick(req.body, 'title', 'basePrice', 'expirationDate');
     logger.debug('Creating auction', query);
-    Promise.join(Auction.create(query), Buyer.all(), function(auction, buyers) {
+
+    function createSchedule(auction){
       logger.info('Created auction', auction.dataValues);
-      logger.info(`Notifying ${buyers.length} buyers of new auction`);
-      buyers.forEach(function(buyer) {
-        buyer.notify({newAuction: auction});
+      var c = cron.scheduleJob(auction.expirationDate, function(){
+        logger.info('Expired auction:', auction.id);
+        getBids(auction).then(function(buyers){
+          return notifyWinners(auction, buyers);
+        });
+      });
+      crons.push({'cron': c, 'auctionId': auction.id});
+      res.location(path(req, auction.id)).sendStatus(201);
+    }
+
+    function notifyWinners(auction, buyers) {
+      logger.info('Notifying winner of finished auction');
+      getWinnerBid(auction).bind({}).then(function(bid){
+        return Buyer.findById(bid.buyerId);
+      }).then(function(winner) {
+        this.winnerId = winner.id;
+        winner.notify({expiredAuction: 'You are the winner, congratulations!'});
+      }).then(function() {
+        return Buyer.findAll( {where: {id: {$ne: this.winnerId}}} )
+      }).then(function(losers) {
+        losers.forEach(function(buyer) {
+          buyer.notify({expiredAuction: 'You are the loser :( '});
+        });
+      }).then(function() {
+        return Auction.update({expirationNotified: true}, {where: {id: auction.id}});
+      });
+    }
+
+    function notifyBuyers(buyers, auction){
+      logger.info('Notifying buyers of expired auction');
+      getBids(auction).all(function(buyers, auction){
+        buyers.forEach(function(buyer){
+          buyer.notify({expiredAuction: auction});
+        });
       });
       res.location(path(req, auction.id)).sendStatus(201);
-    }).catch(function(err) {
-      logger.error(err);
-      error(err, res);
-    });
+    }
+
+    function getBids(auction){
+      return Bid.findAll({where: {'auctionId': auction.id}});
+    }
+
+    function getBidders(bids, auction){
+      return [bids.map(function(bid){
+          return Buyer.findById(bid.buyerId);
+        }), auction];
+    }
+
+    function getWinnerBid(auction){
+      return Bid.findOne({where: {auctionId: auction.id}, order: [['amount', 'DESC']]});
+    }
+
+      Auction.create(query).bind({})
+      .then(createSchedule)
+      .catch(function(err) {
+        //error(err, res);
+        logger.error(err);
+        res.sendStatus(500);
+      });
   });
 
   api.post('/:auctionId/bid', function(req, res) {
@@ -46,50 +111,83 @@ module.exports = function() {
       auctionId: auctionId
     });
 
-    function validateAuction(auction) {
-      if (!auction) {
-        return Promise.reject({status: 404, message: 'auction does not exist'});
-      } else if (auction.isFinished()) {
-        return Promise.reject({status: 400, message: 'auction has finished'});
-      } else {
-        return auction;
-      }
+    function createBid(auction) {
+      return Bid.create(query);
     }
 
-    function createBid() {
-      return [Bid.create(query), Buyer.findAll()];
-    }
-
-    function notifyBuyers(bid, buyers) {
-      logger.info(`New bid: $${bid.amount} on auction ${bid.auctionId} from buyer ${bid.buyerId}`);
-      buyers.forEach(function(buyer) {
-        buyer.notify({
-          amount: bid.amount,
-          auctionId: bid.auctionId
+    function notifyBidders(bids) {
+      const self = this;
+      logger.info(`New bid: $${this.bid.amount} on auction ${this.bid.auctionId} from buyer ${this.bid.buyerId}`);
+      Promise.map(bids, function(bid) {
+        return Buyer.findById(bid.buyerId);
+      }).then(function(buyers) {
+        buyers.forEach(function(buyer) {
+          buyer.notify({
+            amount: self.bid.amount,
+            auctionId: self.bid.auctionId
+          });
         });
-      });
+      })
       res.sendStatus(201);
     }
 
-    Promise.all([Auction.findById(auctionId), Buyer.findById(query.buyerId)])
+    function getBidders(bid){
+      this.bid = bid;
+      return Bid.findAll({where: {'auctionId': bid.auctionId}});
+    }
+
+    Promise.all([Auction.findById(auctionId), Buyer.findById(query.buyerId)]).bind({})
       .spread(validateAuction)
       .then(createBid)
-      .spread(notifyBuyers)
+      .then(getBidders)
+      .then(notifyBidders)
       .catch(function(err) {
         error(err, res);
       });
   });
 
   api.post('/:auctionId/cancel', function(req, res) {
-    function notifyBuyers(auction, buyers) {
-      buyers.forEach(function(buyer) {
-        buyer.notify({auctionCanceled: auction.auctionId});
+    function notifyBuyers(bids) {
+      const self = this;
+      logger.info(bids.length);
+      logger.info(`Cancel auction: ${this.auction.id}`);
+      return Promise.map(bids, function(bid) {
+        return Buyer.findById(bid.buyerId);
+      }).then(function(bidders) {
+        bidders.forEach(function(bidder) {
+          bidder.notify({auctionCanceled: self.auction.id});
+        });
       });
     }
+
+    function getBids(){
+      return Bid.findAll({where: {'auctionId': this.auction.id}});
+    }
+
+    function cancelAuctionCron(auction){
+      this.auction = auction;
+      var c = _.findWhere(crons,{'auctionId': auction.id});
+      if(!c){
+        logger.info('Could not find cron for:', auction.dataValues);
+        return Promise.reject({status: 404, message: 'cron does not exist'});
+      }else{
+        c.cron.cancel();
+        _.pull(crons, c);
+        return auction;
+      }
+    }
+
+    function cancelAuction() {
+      logger.info('Canceled auction', this.auction.id);
+      return this.auction.cancel();
+    }
+
     const auctionId = req.params.auctionId;
-    Auction.findById(auctionId)
+    Auction.findById(auctionId).bind({})
       .then(validateAuction)
+      .then(cancelAuctionCron)
       .then(cancelAuction)
+      .then(getBids)
       .then(notifyBuyers)
       .catch(function(err) {
         error(err, res);
