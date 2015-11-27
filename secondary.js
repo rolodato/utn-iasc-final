@@ -41,6 +41,7 @@ app.get('/', function(req, res) {
     logger.info(`primary is back online, received heartbeat from ${req.hostname}`);
   }
   planFailover();
+  res.sendStatus(200);
 });
 
 app.listen(process.env.EXPRESS_PORT, function() {
