@@ -65,20 +65,22 @@ function startApp() {
     sequelize.sync().then(function() {
       logger.info('Successfully connected to database');
       // failover buyers
-      Buyer.all().then(function(buyers) {
+      return Buyer.all().then(function(buyers) {
         buyers.forEach(function(buyer) {
           buyer.newServer({url: process.env.SECONDARY_URL});
         });
       });
+    }).then(function() {
       // notify expired auctions that were not notified
-      Auction.findAll({where: {expirationNotified: false, expirationDate: {$lt: moment()}}})
+      return Auction.findAll({where: {expirationNotified: false, expirationDate: {$lt: moment()}}})
         .each(function(auction) {
-          logger.info(`Notifying of ${auction.length} expired auctions`);
+          if (!auction) { return; }
+          logger.info('Notifying of expired auction');
           return [notifyWinner(auction), notifyLosers(auction)];
         });
-
+    }).then(function () {
       // auctions that have not expired yet
-      request.post({
+      return request.post({
         url: process.env.SECONDARY_URL + 'auctions/crons'
       }).catch(function(err) {
         logger.error(err);

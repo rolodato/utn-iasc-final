@@ -23,6 +23,10 @@ function validateAuction(auction) {
   }
 }
 
+function getBids(auction) {
+  return Bid.findAll({where: {'auctionId': auction.id}});
+}
+
 module.exports = function() {
   const api = express.Router({
     caseSensitive: true
@@ -94,10 +98,6 @@ module.exports = function() {
         });
       });
       res.location(path(req, auction.id)).sendStatus(201);
-    }
-
-    function getBids(auction){
-      return Bid.findAll({where: {'auctionId': auction.id}});
     }
 
     function getBidders(bids, auction){
