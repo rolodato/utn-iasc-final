@@ -174,6 +174,7 @@ module.exports = function() {
           bidder.notify({auctionCanceled: self.auction.id});
         });
       });
+      res.sendStatus(200);
     }
 
     function getBids(){
