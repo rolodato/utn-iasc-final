@@ -22,12 +22,13 @@ buyer2.listen();
 
 const serverUrl = 'http://localhost:3000/';
 
-Promise.all([buyer1.register(serverUrl), buyer2.register(serverUrl)]).bind({})
-  .then(function() {
+sequelize.sync({force: true}).bind({}).then(function() {
+  return [buyer1.register(serverUrl), buyer2.register(serverUrl)];
+}).spread(function() {
     return request.post({
       json: {
         title: 'my auction',
-        expirationDate: moment().add(60, 's'),
+        expirationDate: moment().add(10, 's'),
         basePrice: 15
       },
       url: serverUrl + 'auctions/',

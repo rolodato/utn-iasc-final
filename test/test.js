@@ -7,6 +7,7 @@ const url = require('url');
 require('dotenv').load();
 const ip = process.env.LOCAL_IP;
 const moment = require('moment');
+const sequelize = require('../models').sequelize;
 
 const buyer1 = new Buyer({
   name: 'alice',
@@ -22,8 +23,10 @@ buyer2.listen();
 // TODO Refactor this
 // Adjudicacion simple, smoke test
 const serverUrl = 'http://localhost:3000/';
-buyer1.register(serverUrl)
-  .then(function() {
+
+sequelize.sync({force: true}).then(function() {
+  return buyer1.register(serverUrl);
+}).then(function() {
   return request.post({
     json: {
       title: 'my auction',
