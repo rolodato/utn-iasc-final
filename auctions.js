@@ -145,8 +145,9 @@ module.exports = function() {
             bidderId: self.bid.buyerId
           });
         });
-      })
-      res.sendStatus(201);
+      }).then(function() {
+        res.sendStatus(201);
+      });
     }
 
     function getBidders(bid){
@@ -167,6 +168,7 @@ module.exports = function() {
   api.post('/:auctionId/cancel', function(req, res) {
     function notifyBuyers(bids) {
       const self = this;
+      res.sendStatus(200);
       return Promise.map(bids, function(bid) {
         return Buyer.findById(bid.buyerId);
       }).then(function(bidders) {
@@ -174,7 +176,6 @@ module.exports = function() {
           bidder.notify({auctionCanceled: self.auction.id});
         });
       });
-      res.sendStatus(200);
     }
 
     function getBids(){
